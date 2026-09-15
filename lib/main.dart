@@ -1,93 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 void main() {
-  runApp(const MeuApp());
+  runApp(const MyApp());
 }
 
-class MeuApp extends StatelessWidget {
-  const MeuApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Distância até minha casa',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const TelaPrincipal(),
+      home: const SensorPage(),
     );
   }
 }
 
-class TelaPrincipal extends StatefulWidget {
-  const TelaPrincipal({super.key});
+class SensorPage extends StatefulWidget {
+  const SensorPage({super.key});
 
   @override
-  State<TelaPrincipal> createState() => _TelaPrincipalState();
+  State<SensorPage> createState() => _SensorPageState();
 }
 
-class _TelaPrincipalState extends State<TelaPrincipal> {
-  String resultado = 'Clique no botão para calcular';
+class _SensorPageState extends State<SensorPage> {
+  double x = 0;
+  double y = 0;
+  double z = 0;
 
-  // Localização da casa
-  // Coloque aqui a latitude e longitude da sua casa
-  double latitudeCasa = -21.4678;
-  double longitudeCasa = -46.5478;
+  @override
+  void initState() {
+    super.initState();
 
-  Future<void> calcularDistancia() async {
-    bool servicoAtivo;
-    LocationPermission permissao;
-
-    // Verifica se o GPS está ligado
-    servicoAtivo = await Geolocator.isLocationServiceEnabled();
-
-    if (!servicoAtivo) {
+    // Recebe os valores do acelerômetro
+    accelerometerEventStream().listen((event) {
       setState(() {
-        resultado = 'Ative o GPS do celular.';
+        x = event.x;
+        y = event.y;
+        z = event.z;
       });
-      return;
-    }
-
-    // Verifica a permissão de localização
-    permissao = await Geolocator.checkPermission();
-
-    if (permissao == LocationPermission.denied) {
-      permissao = await Geolocator.requestPermission();
-
-      if (permissao == LocationPermission.denied) {
-        setState(() {
-          resultado = 'Permissão de localização negada.';
-        });
-        return;
-      }
-    }
-
-    if (permissao == LocationPermission.deniedForever) {
-      setState(() {
-        resultado = 'Permissão de localização bloqueada.';
-      });
-      return;
-    }
-
-    // Obtém a localização atual
-    Position posicaoAtual = await Geolocator.getCurrentPosition();
-
-    // Calcula a distância entre a escola e a casa
-    double distancia = Geolocator.distanceBetween(
-      posicaoAtual.latitude,
-      posicaoAtual.longitude,
-      latitudeCasa,
-      longitudeCasa,
-    );
-
-    // Converte metros para quilômetros
-    double distanciaKm = distancia / 1000;
-
-    setState(() {
-      resultado =
-          'Distância até sua casa:\n${distanciaKm.toStringAsFixed(2)} km';
     });
   }
 
@@ -95,53 +47,38 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Distância até minha casa'),
+        title: const Text('Sensor do celular'),
       ),
 
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.location_on,
-                size: 80,
-                color: Colors.red,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Acelerômetro',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 40),
 
-              const Text(
-                'Escola → Casa',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            Text(
+              'X: ${x.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 24),
+            ),
 
-              const SizedBox(height: 20),
+            Text(
+              'Y: ${y.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 24),
+            ),
 
-              Text(
-                resultado,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              ElevatedButton(
-                onPressed: calcularDistancia,
-                child: const Text(
-                  'Calcular distância',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-            ],
-          ),
+            Text(
+              'Z: ${z.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 24),
+            ),
+          ],
         ),
       ),
     );
